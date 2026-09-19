@@ -1,0 +1,225 @@
+openapi: 3.0.3
+
+info:
+  title: Todo API
+  description: A simple API for managing Todo items
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+paths:
+
+  /list:
+    get:
+      summary: List all Todo items
+      operationId: listTodos
+
+      responses:
+        '200':
+          description: A list of Todo items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Todo'
+
+        '404':
+          description: Todo items not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /create:
+    post:
+      summary: Create a new Todo item
+      operationId: createTodo
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoInput'
+
+      responses:
+        '200':
+          description: Todo item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+
+  /list/{id}:
+    get:
+      summary: Get a single Todo item by ID
+      operationId: getTodoById
+
+      parameters:
+        - $ref: '#/components/parameters/TodoId'
+
+      responses:
+        '200':
+          description: The requested Todo item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+
+        '404':
+          description: Todo item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /edit/{id}:
+    put:
+      summary: Edit an existing Todo item
+      operationId: editTodo
+
+      parameters:
+        - $ref: '#/components/parameters/TodoId'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoInput'
+
+      responses:
+        '200':
+          description: The updated Todo item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+
+        '404':
+          description: Todo item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /delete/{id}:
+    delete:
+      summary: Delete a Todo item
+      operationId: deleteTodo
+
+      parameters:
+        - $ref: '#/components/parameters/TodoId'
+
+      responses:
+        '200':
+          description: Todo item deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+        '404':
+          description: Todo item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+components:
+
+  parameters:
+
+    TodoId:
+      name: id
+      in: path
+      required: true
+      description: ID of the Todo item
+      schema:
+        type: string
+
+
+  schemas:
+
+    Todo:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "a1b2c3d4"
+
+        title:
+          type: string
+          example: "K"
+
+        description:
+          type: string
+          example: "Kubernetes"
+
+
+    TodoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "a1b2c3d4"
+
+        title:
+          type: string
+          example: "K"
+
+        description:
+          type: string
+          example: "Kubernetes"
+
+        timestamp:
+          type: string
+          example: "Sun, 13 Sep 2026 14:55:53 GMT"
+
+
+    TodoInput:
+      type: object
+      required:
+        - title
+        - description
+
+      properties:
+        title:
+          type: string
+          maxLength: 30
+          example: "K"
+
+        description:
+          type: string
+          maxLength: 200
+          example: "Kubernetes"
+
+
+    StatusResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: true
+
+        timestamp:
+          type: string
+          example: "Sun, 13 Sep 2026 14:55:53 GMT"
+
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Task not found"
