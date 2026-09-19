@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orbit Todo</title>
+<style>
+:root {
+    --accent: #16c7b7;
+    --accent-2: #0b9187;
+    --bg: #06100f;
+    --panel: rgba(9, 25, 23, .72);
+    --panel-solid: #0a1917;
+    --text: #e9fffc;
+    --muted: #789490;
+    --border: rgba(85, 221, 207, .16);
+    --danger: #ef7777;
+    --shadow: 0 30px 90px rgba(0,0,0,.35);
+}
+
+[data-theme="light"] {
+    --bg: #eef7f5;
+    --panel: rgba(255,255,255,.76);
+    --panel-solid: #fff;
+    --text: #102422;
+    --muted: #657c78;
+    --border: rgba(10, 115, 106, .15);
+    --shadow: 0 25px 70px rgba(30,80,75,.12);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    min-height: 100%;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+body { overflow-x: hidden; }
+
+#space {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.vignette {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(circle at 72% 25%, transparent 0 22%, rgba(0,0,0,.12) 55%, rgba(0,0,0,.48) 100%);
+}
+
+[data-theme="light"] .vignette {
+    background: radial-gradient(circle at 72% 25%, transparent 0 25%, rgba(230,245,242,.05) 55%, rgba(190,220,215,.2) 100%);
+}
+
+.app {
+    position: relative;
+    z-index: 2;
+    width: min(1250px, calc(100% - 38px));
+    margin: auto;
+    padding: 28px 0 55px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 36px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.logo {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    position: relative;
+    display: grid;
+    place-items: center;
+    color: white;
+    background: radial-gradient(circle at 32% 28%, #7affee, var(--accent) 35%, #08746d 100%);
+    box-shadow: 0 0 35px rgba(22,199,183,.28);
+}
+
+.logo::after {
+    content: "";
+    position: absolute;
+    width: 53px;
+    height: 17px;
+    border: 1px solid rgba(111,255,239,.65);
+    border-radius: 50%;
+    transform: rotate(-20deg);
+}
+
+.logo span { font-size: 17px; font-weight: 900; z-index: 1; }
+
+.brand h1 { margin: 0; font-size: 21px; letter-spacing: -.5px; }
+.brand p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+
+.actions { display: flex; gap: 8px; }
+
+.icon {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--panel);
+    color: var(--text);
+    backdrop-filter: blur(15px);
+    cursor: pointer;
+    font-size: 17px;
+    transition: .2s ease;
+}
+
+.icon:hover {
+    color: var(--accent);
+    border-color: rgba(22,199,183,.45);
+    transform: translateY(-2px);
+}
+
+.hero {
+    min-height: 270px;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 25px;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+.hero-copy {
+    padding: 15px 0;
+    max-width: 670px;
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    font-weight: 800;
+    margin-bottom: 14px;
+}
+
+.live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 14px var(--accent);
+    animation: pulse 1.7s infinite;
+}
+
+@keyframes pulse {
+    50% { opacity: .35; transform: scale(.65); }
+}
+
+.hero h2 {
+    font-size: clamp(38px, 5.2vw, 70px);
+    line-height: .96;
+    letter-spacing: -4px;
+    margin: 0;
+    max-width: 650px;
+}
+
+.hero h2 span { color: var(--accent); }
+
+.hero-copy p {
+    color: var(--muted);
+    max-width: 520px;
+    line-height: 1.65;
+    font-size: 14px;
+    margin: 18px 0 0;
+}
+
+.orbit-card {
+    height: 260px;
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    background: linear-gradient(145deg, rgba(19,52,48,.55), rgba(5,14,13,.35));
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+[data-theme="light"] .orbit-card {
+    background: linear-gradient(145deg, rgba(255,255,255,.72), rgba(225,242,239,.55));
+}
+
+.orbit-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 48%, rgba(22,199,183,.11), transparent 48%);
+}
+
+.orbit-label {
+    position: absolute;
+    left: 20px;
+    top: 18px;
+    z-index: 3;
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.mini-orbit {
+    position: absolute;
+    width: 155px;
+    height: 155px;
+    border: 1px solid rgba(22,199,183,.22);
+    border-radius: 50%;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotateX(65deg);
+}
+
+.mini-orbit.two {
+    width: 215px;
+    height: 215px;
+    opacity: .45;
+}
+
+.mini-planet {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 32% 27%, #a1fff3, #1bbcae 36%, #075b56 78%);
+    box-shadow: 0 0 35px rgba(22,199,183,.35);
+}
+
+.mini-planet::after {
+    content: "";
+    position: absolute;
+    width: 92px;
+    height: 27px;
+    left: -14px;
+    top: 18px;
+    border: 2px solid rgba(129,255,244,.5);
+    border-radius: 50%;
+    transform: rotate(-18deg);
+}
+
+.content {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 22px;
+}
+
+.panel {
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background: var(--panel);
+    backdrop-filter: blur(20px);
+    box-shadow: var(--shadow);
+}
+
+.form-panel {
+    padding: 23px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.heading h3 { margin: 0 0 5px; font-size: 17px; }
+.heading p { margin: 0 0 20px; color: var(--muted); font-size: 12px; }
+
+.field { margin-bottom: 15px; }
+label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+}
+
+input, textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 13px;
+    background: rgba(0,0,0,.08);
+    color: var(--text);
+    outline: none;
+    resize: vertical;
+    transition: .18s;
+}
+
+[data-theme="light"] input,
+[data-theme="light"] textarea { background: rgba(225,240,237,.55); }
+
+input:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(22,199,183,.1);
+}
+
+textarea { min-height: 110px; }
+.counter { text-align: right; margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+.primary {
+    width: 100%;
+    border: 0;
+    border-radius: 12px;
+    padding: 12px;
+    color: white;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 9px 25px rgba(22,199,183,.18);
+    transition: .2s;
+}
+
+.primary:hover { transform: translateY(-2px); }
+
+.list-panel { padding: 22px; min-width: 0; }
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 17px;
+}
+
+.toolbar-title { display: flex; align-items: center; gap: 9px; }
+.toolbar h3 { margin: 0; font-size: 17px; }
+.count {
+    padding: 4px 9px;
+    border-radius: 20px;
+    color: var(--accent);
+    background: rgba(22,199,183,.09);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.search { max-width: 220px; }
+
+.list { display: grid; gap: 10px; }
+
+.todo {
+    padding: 17px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: rgba(255,255,255,.025);
+    transition: .2s;
+}
+
+.todo:hover {
+    transform: translateX(3px);
+    border-color: rgba(22,199,183,.34);
+    background: rgba(22,199,183,.035);
+}
+
+.todo-main { display: flex; justify-content: space-between; gap: 15px; }
+.todo h4 { margin: 0 0 7px; font-size: 15px; overflow-wrap: anywhere; }
+.todo p { margin: 0; color: var(--muted); line-height: 1.55; font-size: 12.5px; overflow-wrap: anywhere; }
+.todo-id { margin-top: 11px; font: 10px ui-monospace, monospace; color: var(--muted); opacity: .7; }
+
+.todo-actions { display: flex; gap: 7px; align-items: flex-start; }
+.small {
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 8px 11px;
+    color: var(--text);
+    background: transparent;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+}
+.small:hover { border-color: var(--accent); color: var(--accent); }
+.delete { color: var(--danger); }
+.delete:hover { border-color: rgba(239,119,119,.4); color: var(--danger); }
+
+.empty, .loading {
+    text-align: center;
+    padding: 50px 20px;
+    border: 1px dashed var(--border);
+    border-radius: 15px;
+    color: var(--muted);
+    font-size: 12px;
+}
+.empty strong { display: block; color: var(--text); margin-bottom: 5px; }
+
+.toast {
+    position: fixed;
+    z-index: 20;
+    right: 22px;
+    bottom: 22px;
+    padding: 13px 16px;
+    border-radius: 12px;
+    background: var(--text);
+    color: var(--bg);
+    box-shadow: var(--shadow);
+    font-size: 12px;
+    transform: translateY(15px);
+    opacity: 0;
+    pointer-events: none;
+    transition: .2s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: none;
+    place-items: center;
+    padding: 20px;
+    background: rgba(0,0,0,.55);
+}
+.modal.open { display: grid; }
+.modal-box {
+    width: min(400px, 100%);
+    padding: 23px;
+    border-radius: 19px;
+    background: var(--panel-solid);
+    border: 1px solid var(--border);
+    box-shadow: 0 30px 90px rgba(0,0,0,.35);
+}
+.modal-box h3 { margin: 0 0 6px; }
+.modal-box p { margin: 0; color: var(--muted); font-size: 12px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+@media (max-width: 850px) {
+    .hero { grid-template-columns: 1fr; }
+    .orbit-card { display: none; }
+    .content { grid-template-columns: 1fr; }
+    .form-panel { position: static; }
+}
+
+@media (max-width: 560px) {
+    .app { width: calc(100% - 22px); padding-top: 17px; }
+    .hero h2 { letter-spacing: -2.5px; }
+    .toolbar { align-items: stretch; flex-direction: column; }
+    .search { max-width: none; }
+    .todo-main { flex-direction: column; }
+    .todo-actions { justify-content: flex-end; }
+}
+</style>
+</head>
+
+<body>
+<canvas id="space"></canvas>
+<div class="vignette"></div>
+
+<div class="app">
+<header>
+    <div class="brand">
+        <div class="logo"><span>✓</span></div>
+        <div>
+            <h1>Orbit Todo</h1>
+            <p>Your tasks. In motion.</p>
+        </div>
+    </div>
+    <div class="actions">
+        <button class="icon" id="refresh" title="Refresh">↻</button>
+        <button class="icon" id="theme" title="Toggle theme">☾</button>
+    </div>
+</header>
+
+<section class="hero">
+    <div class="hero-copy">
+        <div class="eyebrow"><i class="live-dot"></i> System online</div>
+        <h2>Turn ideas into<br><span>something real.</span></h2>
+        <p>Capture the things that matter, keep them moving, and bring the next one into orbit.</p>
+    </div>
+
+    <div class="orbit-card">
+        <div class="orbit-label">Active orbit</div>
+        <div class="mini-orbit"></div>
+        <div class="mini-orbit two"></div>
+        <div class="mini-planet"></div>
+    </div>
+</section>
+
+<main class="content">
+    <section class="panel form-panel">
+        <div class="heading">
+            <h3 id="formTitle">New todo</h3>
+            <p id="formText">Give an idea a place to start.</p>
+        </div>
+
+        <form id="form">
+            <div class="field">
+                <label>Title</label>
+                <input id="title" maxlength="30" placeholder="What needs to happen?" required>
+                <div class="counter"><span id="tc">0</span>/30</div>
+            </div>
+
+            <div class="field">
+                <label>Description</label>
+                <textarea id="description" maxlength="200" placeholder="Describe the next step..." required></textarea>
+                <div class="counter"><span id="dc">0</span>/200</div>
+            </div>
+
+            <button class="primary" id="submit" type="submit">Add to orbit</button>
+        </form>
+    </section>
+
+    <section class="panel list-panel">
+        <div class="toolbar">
+            <div class="toolbar-title">
+                <h3>All todos</h3>
+                <span class="count" id="count">0</span>
+            </div>
+            <input class="search" id="search" placeholder="Search...">
+        </div>
+        <div class="list" id="list"><div class="loading">Loading your orbit...</div></div>
+    </section>
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <h3>Remove this todo?</h3>
+        <p>This task will be permanently removed from your orbit.</p>
+        <div class="modal-actions">
+            <button class="small" id="cancel">Cancel</button>
+            <button class="small delete" id="confirm">Delete</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/*
+    Backend base path.
+    If the frontend is served by Flask itself, keep this as /api/v1.
+    If the API is hosted elsewhere, replace it with that API URL.
+*/
+const API_BASE = "{PROTOCOL}://{IP}:{PORT}/api/v1";
+
+const state = { todos: [], editing: null, deleting: null };
+
+const $ = id => document.getElementById(id);
+const form = $("form");
+const title = $("title");
+const description = $("description");
+const list = $("list");
+
+async function api(path, options = {}) {
+    const response = await fetch(API_BASE + path, {
+        ...options,
+        headers: { "Content-Type": "application/json", ...(options.headers || {}) }
+    });
+
+    if (!response.ok) {
+        let message = `Request failed (${response.status})`;
+        try {
+            const data = await response.json();
+            message = data.message || data.error || message;
+        } catch (_) {}
+        throw new Error(message);
+    }
+
+    return response.status === 204 ? null : response.json();
+}
+
+async function loadTodos() {
+    list.innerHTML = '<div class="loading">Loading your orbit...</div>';
+
+    try {
+        const data = await api("/list");
+        state.todos = Array.isArray(data?.items) ? data.items : [];
+        render();
+    } catch (error) {
+        list.innerHTML = `<div class="empty"><strong>Orbit unavailable</strong>${esc(error.message)}</div>`;
+        toast(error.message);
+    }
+}
+
+function render() {
+    const query = $("search").value.trim().toLowerCase();
+
+    const todos = state.todos.filter(t =>
+        (t.title || "").toLowerCase().includes(query) ||
+        (t.description || "").toLowerCase().includes(query)
+    );
+
+    $("count").textContent = state.todos.length;
+
+    if (!todos.length) {
+        list.innerHTML = `
+            <div class="empty">
+                <strong>${query ? "Nothing matched" : "Your orbit is empty"}</strong>
+                ${query ? "Try another search." : "Add your first todo and watch it move."}
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = todos.map(t => `
+        <article class="todo">
+            <div class="todo-main">
+                <div>
+                    <h4>${esc(t.title || "Untitled")}</h4>
+                    <p>${esc(t.description || "")}</p>
+                    <div class="todo-id">ID ${esc(t.id || "")}</div>
+                </div>
+                <div class="todo-actions">
+                    <button class="small" onclick="editTodo('${js(t.id)}')">Edit</button>
+                    <button class="small delete" onclick="askDelete('${js(t.id)}')">Delete</button>
+                </div>
+            </div>
+        </article>
+    `).join("");
+}
+
+form.addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const payload = {
+        title: title.value.trim(),
+        description: description.value.trim()
+    };
+
+    if (!payload.title || !payload.description) {
+        toast("Please complete both fields.");
+        return;
+    }
+
+    const button = $("submit");
+    button.disabled = true;
+    button.textContent = state.editing ? "Saving..." : "Adding...";
+
+    try {
+        if (state.editing) {
+            await api(`/edit/${encodeURIComponent(state.editing)}`, {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+            toast("Todo updated.");
+        } else {
+            await api("/create", {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            toast("Todo added to orbit.");
+        }
+
+        resetForm();
+        await loadTodos();
+    } catch (error) {
+        toast(error.message);
+    } finally {
+        button.disabled = false;
+        button.textContent = state.editing ? "Save changes" : "Add to orbit";
+    }
+});
+
+window.editTodo = id => {
+    const todo = state.todos.find(t => String(t.id) === String(id));
+    if (!todo) return;
+
+    state.editing = id;
+    title.value = todo.title || "";
+    description.value = todo.description || "";
+    $("formTitle").textContent = "Edit todo";
+    $("formText").textContent = "Move this idea into a better orbit.";
+    $("submit").textContent = "Save changes";
+    counters();
+    title.focus();
+};
+
+function resetForm() {
+    state.editing = null;
+    form.reset();
+    $("formTitle").textContent = "New todo";
+    $("formText").textContent = "Give an idea a place to start.";
+    $("submit").textContent = "Add to orbit";
+    counters();
+}
+
+window.askDelete = id => {
+    state.deleting = id;
+    $("modal").classList.add("open");
+};
+
+$("cancel").onclick = () => {
+    state.deleting = null;
+    $("modal").classList.remove("open");
+};
+
+$("confirm").onclick = async () => {
+    if (!state.deleting) return;
+
+    const id = state.deleting;
+    $("confirm").disabled = true;
+
+    try {
+        await api(`/delete/${encodeURIComponent(id)}`, { method: "DELETE" });
+        $("modal").classList.remove("open");
+        toast("Todo removed.");
+        if (String(state.editing) === String(id)) resetForm();
+        await loadTodos();
+    } catch (error) {
+        toast(error.message);
+    } finally {
+        $("confirm").disabled = false;
+        state.deleting = null;
+    }
+};
+
+$("refresh").onclick = loadTodos;
+$("search").oninput = render;
+title.oninput = counters;
+description.oninput = counters;
+
+function counters() {
+    $("tc").textContent = title.value.length;
+    $("dc").textContent = description.value.length;
+}
+
+function toast(message) {
+    $("toast").textContent = message;
+    $("toast").classList.add("show");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => $("toast").classList.remove("show"), 2800);
+}
+
+function esc(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function js(value) {
+    return String(value).replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+}
+
+/* Theme */
+const savedTheme = localStorage.getItem("orbit-theme");
+if (savedTheme === "light") document.documentElement.dataset.theme = "light";
+
+function updateThemeIcon() {
+    $("theme").textContent =
+        document.documentElement.dataset.theme === "light" ? "☼" : "☾";
+}
+
+$("theme").onclick = () => {
+    if (document.documentElement.dataset.theme === "light") {
+        delete document.documentElement.dataset.theme;
+        localStorage.setItem("orbit-theme", "dark");
+    } else {
+        document.documentElement.dataset.theme = "light";
+        localStorage.setItem("orbit-theme", "light");
+    }
+    updateThemeIcon();
+};
+
+updateThemeIcon();
+counters();
+loadTodos();
+
+/* ---------------------------------------------------------
+   3D orbital background
+   Pure Canvas JavaScript. No external library required.
+   --------------------------------------------------------- */
+
+const canvas = $("space");
+const ctx = canvas.getContext("2d");
+let W, H, dpr;
+let mouseX = 0, mouseY = 0;
+let time = 0;
+
+const stars = Array.from({length: 190}, () => ({
+    x: Math.random(),
+    y: Math.random(),
+    z: Math.random(),
+    size: Math.random() * 1.5 + .25
+}));
+
+const particles = Array.from({length: 110}, () => ({
+    a: Math.random() * Math.PI * 2,
+    r: 80 + Math.random() * 235,
+    y: (Math.random() - .5) * 28,
+    speed: .00015 + Math.random() * .00032,
+    size: .5 + Math.random() * 1.4
+}));
+
+function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener("resize", resize);
+window.addEventListener("mousemove", e => {
+    mouseX = (e.clientX / W - .5);
+    mouseY = (e.clientY / H - .5);
+});
+resize();
+
+function drawStars() {
+    for (const s of stars) {
+        const parallax = 1 + s.z * .08;
+        const x = s.x * W + mouseX * s.z * -30;
+        const y = s.y * H + mouseY * s.z * -20;
+        const alpha = .18 + s.z * .58;
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(125,255,242,${alpha})`;
+        ctx.arc(x, y, s.size * (.45 + s.z), 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function project(x, y, z) {
+    const perspective = 520 / (520 + z);
+    return {
+        x: W * .72 + x * perspective + mouseX * 30,
+        y: H * .31 + y * perspective + mouseY * 20,
+        scale: perspective
+    };
+}
+
+function drawOrbit() {
+    const cx = W * .72;
+    const cy = H * .31;
+
+    ctx.save();
+    ctx.translate(cx + mouseX * 30, cy + mouseY * 20);
+    ctx.rotate(-.18);
+
+    const rx = Math.min(290, W * .25);
+    const ry = rx * .31;
+
+    for (let ring = 0; ring < 4; ring++) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, rx - ring * 17, ry - ring * 3, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(57,220,207,${.10 + ring * .025})`;
+        ctx.lineWidth = ring === 1 ? 2 : 1;
+        ctx.stroke();
+    }
+
+    ctx.restore();
+
+    /* Planet glow */
+    const glow = ctx.createRadialGradient(cx, cy, 5, cx, cy, 105);
+    glow.addColorStop(0, "rgba(52,240,222,.22)");
+    glow.addColorStop(1, "rgba(52,240,222,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 105, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* Planet */
+    const planet = ctx.createRadialGradient(cx - 24, cy - 26, 5, cx, cy, 54);
+    planet.addColorStop(0, "#b1fff5");
+    planet.addColorStop(.25, "#35d9ca");
+    planet.addColorStop(.65, "#108b82");
+    planet.addColorStop(1, "#053c39");
+
+    ctx.fillStyle = planet;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 48, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* Ring behind */
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-.18);
+    ctx.scale(1, .30);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 87, 87, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(112,255,242,.62)";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.restore();
+
+    /* Ring front accent */
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-.18);
+    ctx.scale(1, .30);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 87, 87, 0, Math.PI * .05, Math.PI * .95);
+    ctx.strokeStyle = "rgba(194,255,249,.82)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawParticles() {
+    for (const p of particles) {
+        p.a += p.speed;
+        const x = Math.cos(p.a) * p.r;
+        const y = Math.sin(p.a) * p.r * .31 + p.y;
+        const z = Math.sin(p.a) * 75;
+
+        const point = project(x, y, z);
+        ctx.fillStyle = `rgba(115,255,241,${.18 + point.scale * .5})`;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, p.size * point.scale, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function animate() {
+    time++;
+    ctx.clearRect(0,0,W,H);
+
+    const bg = ctx.createRadialGradient(W*.72,H*.31,0,W*.72,H*.31,Math.max(W,H)*.65);
+    bg.addColorStop(0, "rgba(8,68,62,.20)");
+    bg.addColorStop(.45, "rgba(4,28,26,.08)");
+    bg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,W,H);
+
+    drawStars();
+    drawOrbit();
+    drawParticles();
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
