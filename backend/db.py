@@ -36,3 +36,15 @@ def create_to_do(task : To_do):
         status = False
         timestamp = ''
     return status, timestamp
+
+
+def edit_one_item(task):
+
+    id = task.get_id()
+    title = task.get_title()
+    description = task.get_desc()
+    
+    response = (supabase.table("to_do").update({"title": title, "description": description}).eq("id", id).execute())
+
+    return response.data[0]
+

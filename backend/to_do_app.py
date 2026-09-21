@@ -108,6 +108,8 @@ def edit_task(id):
             task.set_title(title)
             task.set_desc(description)
 
+            edit_one_item(task)
+
             item = {
                 "id": task.get_id(),
                 "title": task.get_title(),
