@@ -5,6 +5,11 @@ from to_do import To_do
 from datetime import datetime, timezone
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
+from db import *
+
 app = Flask(__name__)
 
 FRONTEND_ORIGIN = "https://frontendtodoapp-production-7b4a.up.railway.app"
@@ -35,26 +40,12 @@ swagger = Swagger(
 
 timestamp = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
 
-def save():
-    with open("to_do_list.txt", "w+") as f:
-        for item in to_do_list:
-            f.write(f"{item.get_id()}|{item.get_title()}|{item.get_desc()}\n")
-
-to_do_list = []
-
-if os.path.exists("to_do_list.txt"):
-    with open("to_do_list.txt", "r") as f:
-        for line in f:
-            task_id, title, desc = line.strip().split("|")
-            task = To_do(title, desc, task_id)
-            print(f"{task_id}|{task.title}|{task.desc}")
-            to_do_list.append(task)
-
 @app.route("/api/v1/list",methods=["GET","OPTIONS"])
 def listall_tasks():
     if request.method == "OPTIONS":
         return cors_options_response()
     items = []
+    to_do_list = load_todos()
     for task in to_do_list:
         item = {
             "id": task.get_id(),
@@ -64,7 +55,6 @@ def listall_tasks():
         items.append(item)
 
     return cors_data_response({"items": items})
-
 
 @app.route("/api/v1/create", methods=["POST","OPTIONS"])
 def create_task():
@@ -76,14 +66,16 @@ def create_task():
     description = data["description"]
 
     task = To_do(title, description, None)
-    to_do_list.append(task)
-    save()
-    return cors_data_response({"status": True, "timestamp": timestamp})
+
+    status, timestamp = create_to_do(task)
+
+    return cors_data_response({"status": status, "timestamp": timestamp})
 
 @app.route("/api/v1/list/<id>", methods=["GET","OPTIONS"])
 def list_task(id):
     if request.method == "OPTIONS":
-        return cors_options_response()    
+        return cors_options_response()
+    to_do_list = load_todos()    
     for task in to_do_list:
         if task.get_id() == id:
             item = {
@@ -104,18 +96,21 @@ def edit_task(id):
     title = data["title"]
     description = data["description"]
 
+    to_do_list = load_todos()
+
     for task in to_do_list:
         if task.get_id() == id:
             task.set_title(title)
             task.set_desc(description)
 
-            save() 
+            status = edit_todo(task)
 
             item = {
                 "id": task.get_id(),
                 "title": task.get_title(),
                 "description": task.get_desc(),
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "status":status
             }
 
             return cors_data_response(item)
@@ -127,13 +122,13 @@ def edit_task(id):
 def delete_task(id):
     if request.method == "OPTIONS":
         return cors_options_response()
+    to_do_list = load_todos()
     for task in to_do_list:
         if task.get_id() == id:
-            to_do_list.remove(task)
 
-            save()
+            status = delete_todo(task)
 
-            return cors_data_response({"status": True, "timestamp": timestamp})
+            return cors_data_response({"status": status, "timestamp": timestamp})
         
     return cors_data_response({"Error": "Task not found. So unable to remove the task"},404)
 
