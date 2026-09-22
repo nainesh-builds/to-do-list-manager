@@ -40,7 +40,7 @@ swagger = Swagger(
 
 timestamp = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
 
-@app.route("/api/v1/list/",methods=["GET","OPTIONS"])
+@app.route("/api/v1/list",methods=["GET","OPTIONS"])
 def listall_tasks():
     if request.method == "OPTIONS":
         return cors_options_response()
@@ -56,7 +56,7 @@ def listall_tasks():
 
     return cors_data_response({"items": items})
 
-@app.route("/api/v1/create/", methods=["POST","OPTIONS"])
+@app.route("/api/v1/create", methods=["POST","OPTIONS"])
 def create_task():
     if request.method == "OPTIONS":
         return cors_options_response()
@@ -71,7 +71,7 @@ def create_task():
 
     return cors_data_response({"status": status, "timestamp": timestamp})
 
-@app.route("/api/v1/list/<id>/", methods=["GET","OPTIONS"])
+@app.route("/api/v1/list/<id>", methods=["GET","OPTIONS"])
 def list_task(id):
     if request.method == "OPTIONS":
         return cors_options_response()
@@ -87,7 +87,7 @@ def list_task(id):
             return cors_data_response(item)
     return cors_data_response({"Error": "Task not found"},404)
 
-@app.route("/api/v1/edit/<id>/", methods=["PUT","OPTIONS"])
+@app.route("/api/v1/edit/<id>", methods=["PUT","OPTIONS"])
 def edit_task(id):
     if request.method == "OPTIONS":
         return cors_options_response()
@@ -118,7 +118,7 @@ def edit_task(id):
     return cors_data_response({"Error": "Task not found"},404)
 
 
-@app.route("/api/v1/delete/<id>/", methods=["DELETE","OPTIONS"])
+@app.route("/api/v1/delete/<id>", methods=["DELETE","OPTIONS"])
 def delete_task(id):
     if request.method == "OPTIONS":
         return cors_options_response()
