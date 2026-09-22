@@ -40,8 +40,6 @@ swagger = Swagger(
 
 timestamp = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
 
-# to_do_list = load_todos()
-
 @app.route("/api/v1/list/",methods=["GET","OPTIONS"])
 def listall_tasks():
     if request.method == "OPTIONS":
@@ -58,7 +56,6 @@ def listall_tasks():
 
     return cors_data_response({"items": items})
 
-
 @app.route("/api/v1/create/", methods=["POST","OPTIONS"])
 def create_task():
     if request.method == "OPTIONS":
@@ -69,11 +66,9 @@ def create_task():
     description = data["description"]
 
     task = To_do(title, description, None)
-    # to_do_list.append(task)
 
     status, timestamp = create_to_do(task)
 
-    # save()
     return cors_data_response({"status": status, "timestamp": timestamp})
 
 @app.route("/api/v1/list/<id>/", methods=["GET","OPTIONS"])
@@ -108,13 +103,14 @@ def edit_task(id):
             task.set_title(title)
             task.set_desc(description)
 
-            edit_one_item(task)
+            status = edit_todo(task)
 
             item = {
                 "id": task.get_id(),
                 "title": task.get_title(),
                 "description": task.get_desc(),
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "status":status
             }
 
             return cors_data_response(item)
@@ -129,9 +125,8 @@ def delete_task(id):
     to_do_list = load_todos()
     for task in to_do_list:
         if task.get_id() == id:
-            # to_do_list.remove(task)
 
-            status = delete_item(task)
+            status = delete_todo(task)
 
             return cors_data_response({"status": status, "timestamp": timestamp})
         

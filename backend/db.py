@@ -10,7 +10,7 @@ def load_todos():
     final_list = []
     response = supabase.table("to_do").select("*").execute()
     print(response)
-    #response.data = [{'id': '83c219ea', 'title': 'Docker', 'description': 'Run Containers', 'created_at': '2026-09-20T21:29:20.949322+00:00'}]
+
     for item in response.data:
         id = item['id']
         title = item['title']
@@ -31,28 +31,32 @@ def create_to_do(task : To_do):
         # Step 3 - Get timestamp from newly added to_do item
         timestamp = response.data[0]['created_at']
         # Step 4 - Return status and timestamp
-        status = True
+        status = 200
     except:
-        status = False
+        status = 500
         timestamp = ''
     return status, timestamp
 
-
-def edit_one_item(task):
-
-    id = task.get_id()
-    title = task.get_title()
-    description = task.get_desc()
-    
-    response = (supabase.table("to_do").update({"title": title, "description": description}).eq("id", id).execute())
-
-    return response.data[0]
-
-def delete_item(task):
+def edit_todo(task : To_do):
     try:
-        id = task.get_id()       
+        id = task.get_id()
+        title = task.get_title()
+        description = task.get_desc()
+        # Update the title and description for the specified todo id
+        response = (supabase.table("to_do").update({"title": title, "description": description}).eq("id", id).execute())
+        status = 200
+    except Exception as e:
+        print(e)
+        status = 500
+    return status
+
+def delete_todo(task : To_do):
+    try:
+        id = task.get_id()
+        # Delete the row from table for the specified todo id     
         response = supabase.table("to_do").delete().eq("id", id).execute()
-        status = True
-    except:
-        status = False
+        status = 200
+    except Exception as e:
+        print(e)
+        status = 500
     return status

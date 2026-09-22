@@ -186,6 +186,11 @@ components:
           type: string
           example: "Sun, 13 Sep 2026 14:55:53 GMT"
 
+        status:
+          type: integer
+          enum: [200, 500]
+          example: 200
+
 
     TodoInput:
       type: object
@@ -209,8 +214,9 @@ components:
       type: object
       properties:
         status:
-          type: boolean
-          example: true
+          type: integer
+          enum: [200, 500]
+          example: 200
 
         timestamp:
           type: string
