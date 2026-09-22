@@ -581,7 +581,7 @@ async function loadTodos() {
     list.innerHTML = '<div class="loading">Loading your orbit...</div>';
 
     try {
-        const data = await api("/list");
+        const data = await api("/list/");
         state.todos = Array.isArray(data?.items) ? data.items : [];
         render();
     } catch (error) {
@@ -645,13 +645,13 @@ form.addEventListener("submit", async e => {
 
     try {
         if (state.editing) {
-            await api(`/edit/${encodeURIComponent(state.editing)}`, {
+            await api(`/edit/${encodeURIComponent(state.editing)}/`, {
                 method: "PUT",
                 body: JSON.stringify(payload)
             });
             toast("Todo updated.");
         } else {
-            await api("/create", {
+            await api("/create/", {
                 method: "POST",
                 body: JSON.stringify(payload)
             });
@@ -708,7 +708,7 @@ $("confirm").onclick = async () => {
     $("confirm").disabled = true;
 
     try {
-        await api(`/delete/${encodeURIComponent(id)}`, { method: "DELETE" });
+        await api(`/delete/${encodeURIComponent(id)}/`, { method: "DELETE" });
         $("modal").classList.remove("open");
         toast("Todo removed.");
         if (String(state.editing) === String(id)) resetForm();
