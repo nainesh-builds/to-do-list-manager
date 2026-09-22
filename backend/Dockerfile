@@ -7,6 +7,11 @@ COPY to_do.py /home/app/
 COPY to_do_app.py /home/app/
 COPY openapi.yaml /home/app/
 
+COPY db.py /home/app/
+COPY .env /home/app/
+
+COPY ./supabase /home/app/supabase
+
 #install Python3 and pip
 # RUN apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-pip
 
