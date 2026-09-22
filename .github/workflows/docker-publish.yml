@@ -49,6 +49,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
+          cd backend
           if grep -q "^SUPABASE_URL=" .env; then
             sed -i "s|^SUPABASE_URL=.*|SUPABASE_URL=${SUPABASE_URL}|" .env
           else
