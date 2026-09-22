@@ -129,9 +129,11 @@ def delete_task(id):
     to_do_list = load_todos()
     for task in to_do_list:
         if task.get_id() == id:
-            to_do_list.remove(task)
+            # to_do_list.remove(task)
 
-            return cors_data_response({"status": True, "timestamp": timestamp})
+            status = delete_item(task)
+
+            return cors_data_response({"status": status, "timestamp": timestamp})
         
     return cors_data_response({"Error": "Task not found. So unable to remove the task"},404)
 

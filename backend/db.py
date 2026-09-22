@@ -48,3 +48,11 @@ def edit_one_item(task):
 
     return response.data[0]
 
+def delete_item(task):
+    try:
+        id = task.get_id()       
+        response = supabase.table("to_do").delete().eq("id", id).execute()
+        status = True
+    except:
+        status = False
+    return status
