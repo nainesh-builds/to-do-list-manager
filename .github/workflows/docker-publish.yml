@@ -42,6 +42,24 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Run multi-line inline scripts
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          if grep -q "^SUPABASE_URL=" .env; then
+            sed -i "s|^SUPABASE_URL=.*|SUPABASE_URL=${SUPABASE_URL}|" .env
+          else
+            echo "SUPABASE_URL=${SUPABASE_URL}" >> .env
+          fi
+
+          if grep -q "^SUPABASE_KEY=" .env; then
+            sed -i "s|^SUPABASE_KEY=.*|SUPABASE_KEY=${SUPABASE_KEY}|" .env
+          else
+            echo "SUPABASE_KEY=${SUPABASE_KEY}" >> .env
+          fi
+
       - name: Build and Push Backend
         uses: docker/build-push-action@v6
         with:
